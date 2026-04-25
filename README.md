@@ -34,3 +34,12 @@ The last term $\hat{A}_{T-1}$ is computed easily. Either it is the end of an epi
 ### Entropy loss
 
 The coefficient in front of the entropy loss makes a big difference. My entropy collapses really quickly and letting the coefficient goes from $0.01$ to $0.05$ really helped the policy to learn.
+
+## My results
+
+The policy managed to make the Lunar Lander lands for the first time around the 350th episode. The first video is the first try of the policy while the second is a try close to the end of the training.
+
+https://github.com/user-attachments/assets/eb132a85-ec74-494d-a4f7-a1897a21067a
+
+https://github.com/user-attachments/assets/52133184-3246-42f1-99ec-7e68702bdfc7
+
