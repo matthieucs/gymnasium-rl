@@ -1,7 +1,13 @@
 [project]
 name = "gymnasium-rl"
 version = "0.1.0"
-description = "Add your description here"
+description = "Implementation of RL trainings on gymnasium"
 readme = "README.md"
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "torch",
+    "swig",
+    "gymnasium[box2d]",
+    "moviepy",
+    "matplotlib"
+    ]
