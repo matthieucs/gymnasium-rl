@@ -12,8 +12,6 @@ wheels/
 # videos
 videos/
 
-# training curves
-training_curves.png
 
 # Test file
-test.py
+test*

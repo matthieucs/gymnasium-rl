@@ -1,3 +1,4 @@
+import time
 import numpy as np
 import gymnasium as gym
 import matplotlib.pyplot as plt
@@ -12,13 +13,13 @@ from torch.distributions import Categorical
 matplotlib.use("Qt5Agg")  # use TkAgg for real-time plotting, change to "Qt5Agg" if it doesn't work
 
 ### Hyperparameters ###
-NUM_ENV = 4
+NUM_ENV = 16
 CAPTURE_VIDEO = True
-RUN_NAME = "ppo_lunarlander"
+RUN_NAME = f"ppo_lunarlander_{int(time.time())}"
 GAMMA = 0.99
 LAMBDA = 0.95
-NUMBER_ITERATIONS = 600
-EPISODE_LENGTH = 128
+NUMBER_ITERATIONS = 1000
+EPISODE_LENGTH = 512
 NUMBER_EPOCHS = 4
 NUM_MINIBATCH = 4
 CLIP_COEF = 0.2
@@ -26,7 +27,7 @@ BATCH_SIZE = int(NUM_ENV * EPISODE_LENGTH)
 MINIBATCH_SIZE = int(BATCH_SIZE // NUM_MINIBATCH)
 NORM_ADV = True
 VF_COEF = 0.5
-ENT_COEF = 0.01
+ENT_COEF = 0.05
 MAX_GRAD_NORM = 0.5
 LEARNING_RATE = 2.5e-4
 
@@ -56,12 +57,14 @@ def create_envs(idx, capture_video, run_name):
                            enable_wind=False,
                            wind_power=15.0,
                            turbulence_power=1.5)
-        return gym.wrappers.RecordEpisodeStatistics(env)
+        return env
     return thunk
 
 envs = gym.vector.SyncVectorEnv(
     [create_envs(i, CAPTURE_VIDEO, RUN_NAME) for i in range(NUM_ENV)],
 )
+envs = gym.wrappers.vector.RecordEpisodeStatistics(envs)
+
 assert isinstance(envs.single_action_space, gym.spaces.Discrete), "only discrete action space is supported"
 
 #### Networks ####
@@ -240,12 +243,15 @@ for iteration in range(NUMBER_ITERATIONS):
         current_obs  = torch.Tensor(current_obs).to(device)
         current_done = torch.Tensor(current_done).to(device)
 
-        if "final_info" in infos:
-            for info in infos["final_info"]:
-                if info and "episode" in info:
-                    ep_return = float(info['episode']['r'])
+        if "episode" in infos:
+        # episode['r'] is now an array of shape (NUM_ENV,)
+        # _episode is a boolean mask of which envs finished
+            for i, finished in enumerate(infos["_episode"]):
+                if finished:
+                    ep_return = float(infos["episode"]["r"][i])
                     history["episodic_returns"].append(ep_return)
-                    print(f"[iter {iteration}] episodic_return={ep_return:.1f}")
+                    #print(f"[iter {iteration}] episodic_return={ep_return:.1f}")
+
 
     ## --- GAE computation --- ##
     with torch.no_grad():
@@ -253,11 +259,11 @@ for iteration in range(NUMBER_ITERATIONS):
         current_gae = 0
         for timestep in reversed(range(EPISODE_LENGTH)):
             if timestep == EPISODE_LENGTH - 1:
-                is_terminal     = 1.0 - current_done
+                is_terminal = 1.0 - current_done
             else:
-                is_terminal      = 1.0 - dones[timestep + 1]
+                is_terminal = 1.0 - dones[timestep + 1]
                 t_1_state_values = state_values[timestep + 1]
-            delta_t     = rewards[timestep] + is_terminal * GAMMA * t_1_state_values - state_values[timestep]
+            delta_t = rewards[timestep] + is_terminal * GAMMA * t_1_state_values - state_values[timestep]
             current_gae = delta_t + is_terminal * GAMMA * LAMBDA * current_gae
             gae[timestep] = current_gae
         returns = gae + state_values
@@ -341,6 +347,7 @@ for iteration in range(NUMBER_ITERATIONS):
 
     print(
         f"[iter {iteration:4d}] "
+        f"lr={optimizer.param_groups[0]['lr']:.2e}  "
         f"clip_loss={history['clip_loss'][-1]:+.4f}  "
         f"v_loss={history['value_loss'][-1]:.4f}  "
         f"entropy={history['entropy_loss'][-1]:.4f}  "
