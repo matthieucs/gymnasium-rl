@@ -2,7 +2,7 @@
 
 ![banner](./assets/banner.png) 
 
-This is my implementation of PPO to build a control policy for Lunar Lander on Gymnasium. My implemenation is inspired by [cleanRL](https://github.com/vwxyzjn/cleanrl).
+This is my implementation of PPO to build a control policy for Lunar Lander on Gymnasium. My work is inspired by [cleanRL](https://github.com/vwxyzjn/cleanrl).
 
 ## My setup
 

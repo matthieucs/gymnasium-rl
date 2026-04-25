@@ -30,6 +30,7 @@ VF_COEF = 0.5
 ENT_COEF = 0.05
 MAX_GRAD_NORM = 0.5
 LEARNING_RATE = 2.5e-4
+SAVING=False
 
 print(f"Batch size: {BATCH_SIZE}, Minibatch size: {MINIBATCH_SIZE}")
 
@@ -366,5 +367,14 @@ plt.ioff()
 plt.savefig("training_curves.png", dpi=150, bbox_inches="tight")
 print("Training complete. Plot saved to training_curves.png")
 plt.show()
+
+# Saving the weights
+if SAVING:
+    torch.save({
+        'actor': actor.state_dict(),
+        'critic': critic.state_dict(),
+        'optimizer': optimizer.state_dict(),
+        'iteration': "last",
+    }, f"checkpoints/{RUN_NAME}.pt")
 
 envs.close()
